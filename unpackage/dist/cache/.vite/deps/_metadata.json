@@ -1,0 +1,15 @@
+{
+  "hash": "5fd25014",
+  "configHash": "326ef31b",
+  "lockfileHash": "6e5855c8",
+  "browserHash": "221eb77b",
+  "optimized": {
+    "weapp.socket.io": {
+      "src": "../../../../../node_modules/weapp.socket.io/lib/weapp.socket.io.js",
+      "file": "weapp__socket__io.js",
+      "fileHash": "5ce93439",
+      "needsInterop": true
+    }
+  },
+  "chunks": {}
+}
