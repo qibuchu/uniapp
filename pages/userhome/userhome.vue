@@ -29,7 +29,7 @@
 		</view>
 		<view class="bottom-bar">
 			<view class="bottom-btn btn1" @tap='addFriendBtn' v-if="relation==2">加为好友</view>
-			<view class="bottom-btn btn1" v-if="relation==1">发送消息</view>
+			<view class="bottom-btn btn1" v-if="relation==1" @tap="toChatRoom(user)">发送消息</view>
 		</view>
 		<view class="add-misg" :style="{height:addHeight+'px',bottom:-+addHeight+'px'}" :animation="animationData">
 			<view class="name">{{user.name}}</view>
@@ -47,7 +47,8 @@
 		data() {
 			return {
 				id:'',
-				uid:'',
+				uid:'', 
+				friends:[],
 				token:'',
 				markname:'',
 				msg:'',
@@ -62,7 +63,7 @@
 				animationData3:{},//动画
 				animationData4:{},//动画
 				isAdd:false,
-				user: {}
+				user:[]
 			};
 		},
 		onLoad:function(e){
@@ -94,6 +95,7 @@
 						let status=data.data.status
 						let res=data.data.result
 						console.log(this.id,this.token)
+						
 						if(status==200){
 							res.imgurl='http://localhost:3000'+res.imgurl
 							console.log(res.sex)
@@ -106,6 +108,7 @@
 							this.setJudge(res.sex)
 							
 							this.user=res
+							console.log(this.user)
 						}
 						else if(status==500){
 							uni.showToast({
@@ -137,6 +140,14 @@
 					this.seximg='../../static/images/userhome/asexual.png'
 					this.sexBg='rgba(39,40,50,1)'
 				}
+			},
+			toChatRoom:function(data){
+				console.log(data.id)
+				uni.navigateTo({
+					url:'/pages/chatroom/chatroom?id='+data._id+'&name='+data.name+'&img='+data.imgurl+'&type='+1,
+					
+				})
+				
 			},
 			judgeFriend:function(){
 			     if(this.id==this.uid){
@@ -189,6 +200,7 @@
 						if(status==200){
 							let res=data.data.result
 							console.log(this.uid,this.id,this.token)
+							console.log(res)
 							if(res.markname!=undefined){
 								this.markname=res.myname
 							}

@@ -84,20 +84,22 @@
 		            this.getStorages()
 		            this.FriendRequest()
 		            this.getFriends()
-		            // this.getGroup()
+		            this.getGroup()
 		            this.join(this.uid)
 		            this.receiveSocketMsg()
-					// this.groupSocket()
+					 this.groupSocket()
 		            //this.receiveSocketMsg('groupmsg')
-		            //this.leaveChatr()
+		            this.leaveChatr()
 		            // console.log(this.imgUrl)
 		        },
 		onPullDownRefresh() {
 			this.friends = []
 			this.getStorages()
 			this.getFriends()
+			this.getGroup()
 			this.FriendRequest()
 			this.receiveSocketMsg();
+			this.groupSocket()
 			setTimeout(function() {
 				uni.stopPullDownRefresh()
 			}, 1000)
@@ -156,7 +158,7 @@
 									}
 									this.friends.push(res[i])
 								}
-								// this.isOk(this.groups)
+								 this.isOk(this.groups)
 								console.log(this.friends)
 							}
 							else{
@@ -179,6 +181,7 @@
 			},
 			//获取群
 			getGroup: function() {
+				//console.log('获取群')
 				uni.request({
 					url: this.serverUrl+'/index/getgroup',
 					data: {
@@ -188,13 +191,13 @@
 					method: 'POST',
 					success: (data) => {
 						let status = data.data.status
-						console.log(status)
+						//console.log(status)
 						if (status == 200) {
 							let res = data.data.result
 							console.log(res)
 							if (res.length > 0) {
 								for (let i = 0; i < res.length; i++) {
-									console.log(res[i].imgurl)
+									//console.log(res[i].name)
 									res[i].imgurl = this.serverUrl + res[i].imgurl
 									this.groups.push(res[i])
 									
@@ -291,12 +294,12 @@
 					}
 				})
 			},
-			// isOk:function(e){
-			// 	if(e.length>0){
-			// 		this.friends=this.friends.concat(this.groups)
-			// 		this.friends = myfun.paixu(this.friends, 'lastTime', 0)
-			// 	}
-			// },
+			isOk:function(e){
+				if(e.length>0){
+					this.friends=this.friends.concat(this.groups)
+					this.friends = myfun.paixu(this.friends, 'lastTime', 0)
+				}
+			},
 			FriendRequest: function() {
 				uni.request({
 					url: this.serverUrl+'/index/getfriend',
@@ -324,8 +327,6 @@
 							else{
 								this.noone=true
 							}
-
-							console.log(res)
 						} else if (status == 500) {
 							uni.showToast({
 								title: '服务器出错啦！',
@@ -377,8 +378,8 @@
 			},
 			  groupSocket: function() {
 				  console.log('377groupSocket')
-			                this.socket.on('groupMsg', (msg,fromid,gid,name,tip) => {
-			                    console.log(msg,'379')
+			                this.socket.on('groupmsg', (msg,fromid,gid,name,img) => {
+			                    //console.log(msg,'379')
 			                        let nmsg = '';
 			                        if (msg.types == 0) {
 			                            nmsg = msg.message;
@@ -395,8 +396,8 @@
 								
 			                        for (let i = 0; i < this.friends.length; i++) {
 										
-			                            if (this.friends.id == gid) {
-			                                let e = this.friends;
+			                            if (this.friends[i].id == gid) {
+			                                let e = this.friends[i];
 											 //console.log(e)
 			                                e.lastTime = new Date();
 			                                if(fromid==this.uid){
@@ -410,7 +411,7 @@
 			                                e.tip++;
 											// console.log(this.friends)
 			                                //删除原来数据
-			                                this.friends.splice(i,1,e);
+			                                this.friends.splice(i,1);
 			                                //插入最底部
 			                               this.friends.unshift(e);
 										  
@@ -419,20 +420,21 @@
 									 // console.log(this.friends)
 			                })
 			            },
+						
 						  //离开聊天页面触发的socket事件
-						            // leaveChatr:function(){
-						            //     this.socket.on('leavechatr',(uid,fid)=>{
-						                    
-						            //         for (let i = 0; i < this.friends.length; i++) {
-						            //             if (this.friends[i].id == fid) {
-						            //                 let e = this.friends[i];                            
-						            //                 e.tip++;
-						            //                 //替换原来数据
-						            //                 this.friends[i].splice(i,1,e);
-						            //             }
-						            //         }
-						            //     })
-						            // },
+						            leaveChatr:function(){
+						                this.socket.on('leavechatr',(uid,fid)=>{
+						                    console.log('离开聊天页面')
+						                    for (let i = 0; i < this.friends.length; i++) {
+						                        if (this.friends[i].id == fid) {
+						                            let e = this.friends[i];                            
+						                            e.tip = 0;
+						                            //替换原来数据
+						                            this.friends.splice(i,1,e);
+						                        }
+						                    }
+						                })
+						            },
 			goSearch: function() {
 				uni.navigateTo({
 					url: '/pages/search/search',

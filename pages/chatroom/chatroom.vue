@@ -12,7 +12,7 @@
 			<view class="top-bar-right">
 				<view class="spice"></view>
 				<view class="group-img" v-if="type ==1">
-					<image :src="fimgurl"></image>
+					<image :src="fimgurl" @tap="goGroupHome"></image>
 				</view>
 			</view>
 		</view>
@@ -24,7 +24,7 @@
 				<view class="chat-ls" v-for="(item,index) in msgs" :key="index" :id="'msg'+item.id">
 					<view class="chat-time" v-if="item.time !=''">{{changeTime(item.time)}}</view>
 					<view class="msg-m msg-left" v-if="item.fromId !=uid">
-						<image :src="item.imgurl" class="user-img"></image>
+						<image :src="item.imgurl" class="user-img" @tap="goUserHome(item.fromId)"></image>
 						<view class="message" v-if="item.types==0">
 							<view class="msg-text">{{item.message}}</view>
 						</view>
@@ -120,14 +120,16 @@
 			this.fid = e.id;
 			this.fname = e.name;
 			this.type = e.type;
+			//console.log(this.type)
 			this.fimgurl = e.img;
 			//console.log(e)
 			this.getStorages();
 			this.getMsg();
+			this.getGroupMsg()
 			this.join(this.uid)
 			// this.receiveMsg()
 			this.receiveSocketMsg();
-			// this.groupSocket();
+			 this.groupSocket();
 			// this.sendSocket(e);
 			//this.nextpage();
 		},
@@ -155,9 +157,14 @@
 					//error
 				}
 			},
+			goUserHome:function(id){
+				uni.navigateTo({
+					url:'../userhome/userhome?id='+id
+				})
+			},
 			//返回登录页面
 			  backOne:function(){
-			                // this.socket.emit('leaveChatr',this.uid,this.fid);
+			                 this.socket.emit('leaveChatr',this.uid,this.fid);
 			                uni.navigateBack({
 			                    dalta: 1
 			                });
@@ -167,7 +174,7 @@
 				return myfun.dateTime(date);
 			},
 			//滚动加载下一页
-			nextPage: function(){
+			nextPage:function(){
 				if(this.nowpage>0 && this.beginloading){
 					this.isloading = false;
 					//禁止重复加载
@@ -184,7 +191,11 @@
 					  this.animationData = animation.export()
 					  i++;
 					  if(i>10){
-						  this.getMsg(this.nowpage);
+						  if(this.type == 0){
+							  this.getMsg(this.nowpage);
+						  }else{
+							 this.getGroupMsg(this.nowpage); 
+						  }
 					  }
 					}.bind(this), 100)
 				}
@@ -205,12 +216,12 @@
 					 method: 'POST',
 					success:(data)=>{
 						let res = data.data.result;
-						console.log(res)
+						//console.log(res)
 						const status = data.data.status;
 									  
 						if (status === 200) {
 						  let msg = res;
-						console.log(msg)
+						//console.log(msg)
 									  
 						  // 检查 msg 是否为数组
 						  if (!Array.isArray(msg)) {
@@ -235,15 +246,13 @@
 						       
 						      // 计算时间间隔
 						      if (i < msg.length - 1) {
-													msg[i].time=new Date(msg[i].time);
-													console.log(msg[i].time)
-												
+								msg[i].time=new Date(msg[i].time);												
 						        let t = myfun.spaceTime(oldTime, msg[i].time);
 						        if (t) {
 						          oldTime = t;
 						        }
 						        msg[i].time = t;
-												  console.log(t)
+								 //console.log(t)
 						      }
 									  
 						      // 处理消息类型为图片的情况
@@ -264,7 +273,7 @@
 						    this.imgMsg = imgarr.concat(this.imgMsg);
 											  // console.log( this.imgMsg)
 											  // console.log(this.imgarr)
-											  // console.log(this.msgs)
+											   console.log(this.msgs)
 						  }
 									  
 						  // 更新分页状态
@@ -298,69 +307,117 @@
 						}
 					}
 			      });
-			  
-			    
-			    // } catch (err) {
-			    //   console.error('请求出错:', err);
-			    //   uni.showToast({
-			    //     title: '网络请求失败，请重试',
-			    //     icon: 'none',
-			    //     duration: 2000,
-			    //   });
-			    // }
 				}
 			  },
-			  
-			  //计算时间间隔
-			  calculateTimeInterval: function(oldTime, newTime) {
-			    // 实现你的时间间隔计算逻辑
-			    // 例如：返回格式化后的时间差
-			    return newTime - oldTime; // 这里只是一个示例
+			  // 获取聊天数据
+			  getGroupMsg:function(page,isloading) {
+			  				  if(this.isloading==true){
+			       uni.request({
+			        url: this.serverUrl+'/chat/gmsg',
+			       
+			        data: {
+			          uid: this.uid,
+			          gid: this.fid,
+			          nowpage: this.nowpage,
+			          pageSize: this.pagesize,
+			          token: this.token,
+			        },
+			  					 method: 'POST',
+			  					success:(data)=>{
+			  						let res = data.data.result;
+			  						console.log(res)
+			  						const status = data.data.status;
+			  									  
+			  						if (status === 200) {
+			  						  let msg = res;
+			  						//console.log(msg)
+			  									  
+			  						  // 检查 msg 是否为数组
+			  						  if (!Array.isArray(msg)) {
+			  						    console.error('返回的消息数据不是数组');
+			  						    return;
+			  						  }
+			  									  
+			  						  // 将数组倒序
+			  						  msg.reverse();
+			  									  
+			  						  if (msg.length > 0) {
+			  												// let len=msg.length
+			  						    let oldTime = msg[0].time;
+			  											  			  
+			  							console.log(oldTime)
+			  						    let imgarr = [];
+			  									  
+			  						    for (let i = 0; i < msg.length; i++) {
+			  						      // 补充图片地址
+			  						      msg[i].imgurl = this.serverUrl + msg[i].imgurl;
+			  												//console.log(msg[i].imgurl)
+			  						       
+			  						      // 计算时间间隔
+			  						      if (i < msg.length - 1) {
+			  								msg[i].time=new Date(msg[i].time);												
+			  						        let t = myfun.spaceTime(oldTime, msg[i].time);
+			  						        if (t) {
+			  						          oldTime = t;
+			  						        }
+			  						        msg[i].time = t;
+			  								 //console.log(t)
+			  						      }
+			  									  
+			  						      // 处理消息类型为图片的情况
+			  						      if (msg[i].types == 1) {
+			  													console.log(msg[i].message)
+			  						        msg[i].message = this.serverUrl + msg[i].message;
+			  												  console.log(msg[i].message)
+			  						        imgarr.push(msg[i].message);
+			  						      }
+			  												//json字符串还原
+			  												if (msg[i].types == 3) {
+			  												  msg[i].message = JSON.parse(msg[i].message);
+			  												}
+			  						    }
+			  									  
+			  						    // 更新消息列表
+			  						    this.msgs = msg.concat(this.msgs);
+			  						    this.imgMsg = imgarr.concat(this.imgMsg);
+			  											  // console.log( this.imgMsg)
+			  											  // console.log(this.imgarr)
+			  											  console.log(this.msgs)
+			  						  }
+			  									  
+			  						  // 更新分页状态
+			  						  if (msg.length === 10) {
+			  						    this.nowpage++;
+			  						  } else {
+			  						    // 数据获取完毕
+			  						    this.nowpage = -1;
+			  						  }
+			  									  
+			  						  // 更新 UI
+			  						  this.$nextTick(() => {
+			  						    this.swanition = false;
+			  						    this.scrollToView = 'msg' + this.msgs[this.msgs.length-1]?.id;
+			  						  });
+			  									  
+			  						  // 清除加载状态
+			  						  clearInterval(this.loading);
+			  						  this.isloading = true;
+			  						  this.beginloading = true;
+			  						} else if (status === 500) {
+			  						  uni.showToast({
+			  						    title: '服务器出错啦！',
+			  						    icon: 'none',
+			  						    duration: 2000,
+			  						  });
+			  						} else if (status === 300) {
+			  						  uni.navigateTo({
+			  						    url: '../signin/signin?name=' + this.myname,
+			  						  });
+			  						}
+			  					}
+			      });
+			  				}
 			  },
-			// //获取聊天数据
-			// getMsg1: function(page){
-			// 	let msg = datas.message();
-			// 	let maxpages = msg.length;
-			// 	if(msg.length>(page+1)*10){
-			// 		maxpages = (page+1)*10;
-			// 		this.nowpage++;
-			// 	}else{
-			// 		//数据获取完毕
-			// 		this.nowpage = -1;
-			// 	}
-			// 	for(var i=page*10;i<maxpages;i++){
-			// 		msg[i].imgurl = '../../static/images/img/'+msg[i].imgurl;
-			// 		//时间间隔
-			// 		if(i<msg.length-1){
-			// 			let t = myfun.spaceTime(this.oldTime,msg[i].time);
-			// 			if(t){
-			// 				this.oldTime = t;
-			// 			}
-			// 			msg[i].time = t;
-			// 		}
-			// 		//匹配最大时间
-			// 		id(this.nowpage == 0){
-			// 			if(msg[i].time >this.oldTime){
-			// 				this.oldTime = msg[i].time ;
-			// 			}
-			// 		}
-			// 		//补充图片地址
-			// 		if(msg[i].types ==1){
-			// 			msg[i].message = '../../static/images/img/'+msg[i].message;
-			// 			this.imgMsg.unshift(msg[i].message);
-			// 		}
-			// 		this.msgs.unshift(msg[i]);
-			// 	}
-			// 	//页数加一
-			// 	this.$nextTick(function(){
-			// 		this.swanition=false;
-			// 		this.scrollToView='msg'+this.msgs[maxpage-page*10-1].tip;
-			// 	})
-			// 	clearInterval(this.loading);
-			// 	this.isloading = true;
-			// 	//开启
-			// 	this.beginloading = true;
-			// },
 			//预览图片
 			previewImg: function(e){
 				let index=0;
@@ -413,7 +470,7 @@
 			//接收输入内容
 			inputs:function(e){
 				this.receiveMsg(e,this.uid,this.imgurl,0);
-				console.log(this.imgurl)
+				console.log(this.uid)
 			},
 			//接收消息
 			receiveMsg:function(e,id,img,tip){
@@ -516,51 +573,53 @@
 			                    console.log('一对一通信')
 			                }else {
 			                    //群发
-			                    this.socket.emit('groupMsg',e,this.uid,this.fid,this.uname,this.uimgurl);
+								console.log('群通信')
+			                    this.socket.emit('groupMsg',e,this.uid,this.fid,this.uname,this.imgurl);
 			                }
 			            },
-						     // groupSocket:function(){
-						     //            console.log('群聊天数据接收1')
-						     //            this.socket.on('groupmsg',(msg,fromid,gid,name,img) => {
-						     //                console.log('群聊天数据接收2')
-						     //                if(fromid == this.fid){
-						     //                this.swanition = true;
-						     //                let len = this.msgs.length;
-						     //                let nowTime = new Date();
-						     //                let oldTime=this.msgs[len-1].time
-						     //                //时间间隔
-						     //                let t = myfun.spaceTime(oldTime,nowTime);
-						     //                if(t){
-						     //                    oldTime = t;
-						     //                }
-						     //                //判断是否添加ip
-						     //                if(msg.types == 1 || msg.types == 2){
-						     //                    msg.message = this.serverUrl+msg.message;
-						     //                    console.log(msg.message)
-						     //                }
+						     groupSocket:function(){
+						                console.log('群聊天数据接收1')
+						                this.socket.on('groupmsg',(msg,fromid,gid,name,img,tip) => {
+						                    console.log('群聊天数据接收2')
+											console.log(gid,this.fid,tip)
+						                    if(gid == this.fid && tip == 0){
+						                    this.swanition = true;
+						                    let len = this.msgs.length;
+						                    let nowTime = new Date();
+						                    let oldTime=this.msgs[len-1].time
+						                    //时间间隔
+						                    let t = myfun.spaceTime(oldTime,nowTime);
+						                    if(t){
+						                        oldTime = t;
+						                    }
+						                    //判断是否添加ip
+						                    if(msg.types == 1 || msg.types == 2){
+						                        msg.message = this.serverUrl+msg.message;
+						                        console.log(msg.message)
+						                    }
 						                    
-						     //                nowTime = t;
-						     //                let data ={
-						     //                    fromId:fromid,//发送者id
-						     //                    imgurl:img,
-						     //                    message:msg.message,
-						     //                    types:msg.types,
-						     //                    time: nowTime,
-						     //                    id:len,
-						     //                };
-						     //                this.msgs.push(data);
-						     //                //console.log('后端发送的消息为：'+msg+fromid);
-						     //                if(msg.types == 1){
-						     //                    this.imgMsg.push(this.serverUrl+msg.message);
+						                    nowTime = t;
+						                    let data ={
+						                        fromId:fromid,//发送者id
+						                        imgurl:img,
+						                        message:msg.message,
+						                        types:msg.types,
+						                        time: nowTime,
+						                        id:len,
+						                    };
+						                    this.msgs.push(data);
+						                    //console.log('后端发送的消息为：'+msg+fromid);
+						                    if(msg.types == 1){
+						                        this.imgMsg.push(this.serverUrl+msg.message);
 						                        
-						     //                }
-						     //                this.$nextTick(function(){
-						     //                    this.scrollToView = 'msg' + len;
-						     //                })
-						     //                }
-						     //            })
+						                    }
+						                    this.$nextTick(function(){
+						                        this.scrollToView = 'msg' + len;
+						                    })
+						                    }
+						                })
 						                
-						     //        },
+						            },
 			//socket聊天数据接收
 			receiveSocketMsg:function(){
 				console.log('聊天数据接收1')
@@ -609,7 +668,7 @@
 			join:function(uid){
 				this.socket.emit('login',uid);
 			},
-			    goGroupHome:function(){
+			goGroupHome:function(){
 			                uni.navigateTo({
 			                    url:'../grouphome/grouphome?gid='+this.fid+'&gimg='+this.fimgurl
 			                })

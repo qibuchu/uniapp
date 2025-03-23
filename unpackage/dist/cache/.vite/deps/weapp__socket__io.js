@@ -3,9 +3,9 @@ var __commonJS = (cb, mod) => function __require() {
   return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
 
-// ../../../../逸氪聊天/uniapp/node_modules/weapp.socket.io/lib/weapp.socket.io.js
+// ../../../../逸氪聊天/uniapp/uniapp/node_modules/weapp.socket.io/lib/weapp.socket.io.js
 var require_weapp_socket_io = __commonJS({
-  "../../../../逸氪聊天/uniapp/node_modules/weapp.socket.io/lib/weapp.socket.io.js"(exports, module) {
+  "../../../../逸氪聊天/uniapp/uniapp/node_modules/weapp.socket.io/lib/weapp.socket.io.js"(exports, module) {
     !function(t, e) {
       if ("object" == typeof exports && "object" == typeof module)
         module.exports = e();

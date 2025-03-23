@@ -14,16 +14,15 @@
 			<view class="search-user result">
 				<view class="title" v-if="userarr.length>0">用户</view>
 				<view class="list user" v-for="(item,index) in userarr" :key="index">
-					<navigator :url="'../userhome/userhome?id='+item._id" hover-class="none">
-						<image :src="item.imgurl"></image>
-					</navigator>
-					
+						<image :src="item.imgurl" @tap="goUserHome(item)"></image>
 					<view class="names">
 						<view class="name" v-html="item.names"></view>
 						<view class="email" v-html="item.emails"></view>
 					</view>
 					<view class="right-btn send" v-if="item.tip==1" @tap="toChatRoom(item)">发消息</view>
 					<view class="right-btn add" v-if="item.tip==0" @tap="addFriendBtn(item._id)">加好友</view>
+					<view class="right-btn send" v-if="item.tip==3" @tap="toChatRoom(item)">进群</view>
+					<view class="right-btn add" v-if="item.tip==2">申请加群</view>
 				</view>
 			</view>
 		</view>
@@ -176,6 +175,7 @@
 				console.log(searchval);
 				if (searchval.length > 0) {
 					this.searchUser(searchval)
+					this.searchGroup(searchval)
 				}
 			}, 500),
 			// search1: function(e) {
@@ -231,6 +231,111 @@
 				})
 
 			},
+			searchGroup:function(e){
+				uni.request({
+					url: 'http://localhost:3000/search/group',
+					data: {
+						data: e,
+						token: this.token
+					},
+					method: 'POST',
+					success: (data) => {
+						console.log(data)
+						let status = data.data.status
+						if (status == 200) {
+							let arr = data.data.result
+							console.log(arr)
+							console.log(e)
+							// let exp = eval("/" + e + "/g")
+							for (let i = 0; i < arr.length; i++) {
+								  
+								if (arr[i].name.search(e) != -1 || arr[i].email.search(e) != -1) {
+									this.isGroup(arr[i],e)
+									console.log(1)
+									// arr[i].imgurl = 'http://localhost:3000' + arr[i].imgurl
+									// arr[i].name = arr[i].name.replace(exp,
+									// 	"<span style='color:#4AAAAFF'>" + e + "</span>")
+									// arr[i].email =arr[i].email.replace(exp,
+									// 	"<span style='color:#4AAAAFF'>" + e + "</span>")
+									// this.userarr.push(arr[i])
+								}
+				            
+							}
+						} else if (status == 500) {
+							uni.showToast({
+								title: '服务器输错啦！',
+								icon: 'none',
+								duration: 2000
+							})
+						} else if (status == 300) {
+							uni.navigateTo({
+								url: '../signin/signin?name' + this.myname
+							})
+						}
+					}
+				})
+			},
+			isGroup:function(arr,e){
+				let tip = 3
+					let exp = eval("/" + e + "/g")
+				if (arr._id == this.uid) {
+					arr.tip = tip
+					arr.imgurl = 'http://localhost:3000'+ arr.imgurl
+					arr.names = arr.name?.replace(exp,
+						"<span style='color:#4AAAFF'>" + e + "</span>")
+					this.userarr.push(arr)
+				} else {
+					uni.request({
+						url: 'http://localhost:3000/search/isgroup',
+						data: {
+							uid: this.uid,
+							gid: arr._id,
+							token: this.token
+						},
+						method: 'POST',
+						success: (data) => {
+							console.log(data)
+							
+							let status = data.data.status
+							if (status == 200) {
+								tip = 3
+								console.log(3)
+							} else if (status == 400) {
+				                     console.log(4)
+									 tip=2
+							} else if (status == 500) {
+								uni.showToast({
+									title: '服务器输错啦！',
+									icon: 'none',
+									duration: 2000
+								})
+							} else if (status == 300) {
+								uni.navigateTo({
+									url: '../signin/signin?name' + this.myname
+								})
+							}
+							arr.tip = tip
+							arr.id=arr._id
+							arr.type=0
+							arr.imgurl = 'http://localhost:3000'+arr.imgurl
+							arr.names = arr.name?.replace(exp,
+								"<span style='color:#4AAAFF'>" + e + "</span>")
+							arr.emails=arr.email?.replace(exp,
+								"<span style='color:#4AAAFF'>" + e + "</span>")
+							this.userarr.push(arr)
+						},
+				
+					})
+				}
+			},
+			goUserHome:function(data){
+				if(data.tip!=3){
+					uni.navigateTo({
+						url:'../userhome/userhome?id='+data._id
+					})
+				}
+	
+			},
 			//判断是否为好友
 			isFriend: function(arr,e) {
 				console.log(2)
@@ -241,9 +346,9 @@
 					tip = 2
 					arr.tip = tip
 					arr.imgurl = 'http://localhost:3000'+ arr.imgurl
-					arr.names = arr.name.replace(exp,
+					arr.names = arr.name?.replace(exp,
 						"<span style='color:#4AAAFF'>" + e + "</span>")
-					arr.emails=arr.email.replace(exp,
+					arr.emails=arr.email?.replace(exp,
 						"<span style='color:#4AAAFF'>" + e + "</span>")
 					this.userarr.push(arr)
 				} else {
@@ -279,9 +384,9 @@
 							arr.id=arr._id
 							arr.type=0
 							arr.imgurl = 'http://localhost:3000'+arr.imgurl
-							arr.names = arr.name.replace(exp,
+							arr.names = arr.name?.replace(exp,
 								"<span style='color:#4AAAFF'>" + e + "</span>")
-							arr.emails=arr.email.replace(exp,
+							arr.emails=arr.email?.replace(exp,
 								"<span style='color:#4AAAFF'>" + e + "</span>")
 							this.userarr.push(arr)
 						},
